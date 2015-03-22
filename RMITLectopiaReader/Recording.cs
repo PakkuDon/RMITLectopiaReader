@@ -11,14 +11,16 @@ namespace RMITLectopiaReader
         // Properties
         public int ID { get; set; }
         public DateTime DateRecorded { get; set; }
-        public String Speaker { get; set; }
-        public int Duration { get; set; }
-        public List<RecordingFormat> RecordingFormats { get; set; }
+        public String Duration { get; set; }
+        public List<Format> Formats { get; set; }
 
         // Constructor
-        public Recording()
+        public Recording(int ID, DateTime dateRecorded, String duration)
         {
-            RecordingFormats = new List<RecordingFormat>();
+            this.ID = ID;
+            this.DateRecorded = dateRecorded;
+            this.Duration = duration;
+            Formats = new List<Format>();
         }
     }
 }

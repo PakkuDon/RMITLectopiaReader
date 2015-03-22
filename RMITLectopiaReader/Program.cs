@@ -15,6 +15,7 @@ namespace RMITLectopiaReader
             Console.WriteLine("RMIT Lectopia Reader");
             Console.WriteLine("------------------------");
             Console.WriteLine();
+            Console.WriteLine("Started at {0}", DateTime.Now.ToString());
 
             // Initialize necessary components
             var reader = new LectopiaReader();
@@ -26,12 +27,13 @@ namespace RMITLectopiaReader
 
             // Perform lengthy reading operation
             Console.WriteLine("Reading pages");
-            reader.ReadCourseData(end: 400, callback: progressCallback);
+            reader.ReadCourseData(start: 10, end: 20, callback: progressCallback);
 
             // Print statistics
-            var list = reader.RecordingListURLs;
+            var list = reader.CourseInstances;
             Console.WriteLine();
-            Console.WriteLine("{0} successful reads.", reader.RecordingListURLs.Count());
+            Console.WriteLine("Finished at {0}", DateTime.Now.ToString());
+            Console.WriteLine("{0} successful reads.", reader.CourseInstances.Count());
 
             Console.ReadLine();
         }

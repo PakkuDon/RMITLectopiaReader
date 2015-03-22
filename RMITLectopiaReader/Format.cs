@@ -6,10 +6,17 @@ using System.Threading.Tasks;
 
 namespace RMITLectopiaReader
 {
-    class RecordingFormat
+    class Format
     {
         // Properties
         public int ID { get; set; }
-        public String FormatName { get; set; }
+        public String Name { get; set; }
+
+        // Constructor
+        public Format(int id, String name)
+        {
+            this.ID = id;
+            this.Name = name;
+        }
     }
 }
