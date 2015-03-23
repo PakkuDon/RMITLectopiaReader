@@ -11,10 +11,10 @@ namespace RMITLectopiaReader
     {
         static void Main(string[] args)
         {
+            var menu = new Menu();
+
             // Print heading
-            Console.WriteLine("RMIT Lectopia Reader");
-            Console.WriteLine("------------------------");
-            Console.WriteLine();
+            menu.DisplayHeader();
             Console.WriteLine("Started at {0}", DateTime.Now.ToString());
 
             // Initialize necessary components
@@ -25,15 +25,34 @@ namespace RMITLectopiaReader
                 Console.Write("{0}% completed.", progress.ToString("#.##"));
             });
 
-            // Perform lengthy reading operation
-            Console.WriteLine("Reading pages");
-            reader.ReadCourseData(start: 10, end: 20, callback: progressCallback);
+            MenuOption selectedOption;
 
-            // Print statistics
-            var list = reader.CourseInstances;
-            Console.WriteLine();
-            Console.WriteLine("Finished at {0}", DateTime.Now.ToString());
-            Console.WriteLine("{0} successful reads.", reader.CourseInstances.Count());
+            do
+            {
+                menu.DisplayOptions();
+                Console.WriteLine();
+                Console.Write("Please select an option: ");
+                // TODO: Validation
+                selectedOption = (MenuOption)Convert.ToInt32(Console.ReadLine());
+
+                // Process selected option
+                switch (selectedOption)
+                {
+                    case MenuOption.READ_LISTINGS:
+                        Console.WriteLine("Reading listings");
+                        break;
+                    case MenuOption.FIND_COURSE:
+                        Console.WriteLine("Find course");
+                        break;
+                    case MenuOption.EXPORT_JSON:
+                        Console.WriteLine("Export JSON");
+                        break;
+                    case MenuOption.EXIT:
+                        Console.WriteLine("Exiting");
+                        break;
+                }
+                Console.WriteLine();
+            } while (selectedOption != MenuOption.EXIT);
 
             Console.ReadLine();
         }
