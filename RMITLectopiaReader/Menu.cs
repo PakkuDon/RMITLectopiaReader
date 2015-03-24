@@ -9,7 +9,7 @@ namespace RMITLectopiaReader
     enum MenuOption
     {
         READ_LISTINGS = 1,
-        FIND_COURSE,
+        SEARCH_COURSES,
         EXPORT_JSON,
         EXIT
     }
@@ -33,7 +33,7 @@ namespace RMITLectopiaReader
         public void DisplayOptions()
         {
             Console.WriteLine("1) Read listings");
-            Console.WriteLine("2) Find course");
+            Console.WriteLine("2) Search courses");
             Console.WriteLine("3) Export to .json file");
             Console.WriteLine("4) Exit");
         }

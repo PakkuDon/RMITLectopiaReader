@@ -34,8 +34,8 @@ namespace RMITLectopiaReader
                     case MenuOption.READ_LISTINGS:
                         ReadListings(menu, reader);
                         break;
-                    case MenuOption.FIND_COURSE:
-                        Console.WriteLine("Find course");
+                    case MenuOption.SEARCH_COURSES:
+                        SearchCourses(menu, reader);
                         break;
                     case MenuOption.EXPORT_JSON:
                         Console.WriteLine("Export JSON");
@@ -92,6 +92,32 @@ namespace RMITLectopiaReader
             foreach (var course in reader.CourseInstances)
             {
                 Console.WriteLine(course.Name);
+            }
+        }
+
+        static void SearchCourses(Menu menu, LectopiaReader reader)
+        {
+            // Print heading
+            Console.WriteLine("Search courses");
+            Console.WriteLine("----------------");
+
+            // Prompt user for a search term
+            Console.Write("Search term: ");
+            String searchTerm = Console.ReadLine();
+
+            // Retrieve list of courses containing the given substring
+            var matchingCourses = reader.CourseInstances.Where(
+                c => c.Name.ToLower().Contains(searchTerm.ToLower()));
+
+            // Display search results
+            Console.WriteLine("{0} results found.", matchingCourses.Count());
+            if (matchingCourses.Count() > 0)
+            {
+                Console.WriteLine("{0, -10} | {1, -20}", "ID", "Name");
+                foreach (var course in matchingCourses)
+                {
+                    Console.WriteLine("{0, -10} | {1, -20}", course.ID, course.Name);
+                }
             }
         }
     }
