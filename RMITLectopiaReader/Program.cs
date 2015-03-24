@@ -11,19 +11,13 @@ namespace RMITLectopiaReader
     {
         static void Main(string[] args)
         {
+            // Initialize necessary components
+            var reader = new LectopiaReader();
             var menu = new Menu();
 
             // Print heading
             menu.DisplayHeader();
             Console.WriteLine("Started at {0}", DateTime.Now.ToString());
-
-            // Initialize necessary components
-            var reader = new LectopiaReader();
-            IProgress<Double> progressCallback = new Progress<Double>(progress =>
-            {
-                Console.Write("\r");
-                Console.Write("{0}% completed.", progress.ToString("#.##"));
-            });
 
             MenuOption selectedOption;
 
@@ -31,15 +25,14 @@ namespace RMITLectopiaReader
             {
                 menu.DisplayOptions();
                 Console.WriteLine();
-                Console.Write("Please select an option: ");
                 // TODO: Validation
-                selectedOption = (MenuOption)Convert.ToInt32(Console.ReadLine());
+                selectedOption = (MenuOption)menu.GetIntegerInput("Please select an option: ");
 
                 // Process selected option
                 switch (selectedOption)
                 {
                     case MenuOption.READ_LISTINGS:
-                        Console.WriteLine("Reading listings");
+                        ReadListings(menu, reader);
                         break;
                     case MenuOption.FIND_COURSE:
                         Console.WriteLine("Find course");
@@ -55,6 +48,51 @@ namespace RMITLectopiaReader
             } while (selectedOption != MenuOption.EXIT);
 
             Console.ReadLine();
+        }
+
+        static void ReadListings(Menu menu, LectopiaReader reader)
+        {
+            Console.WriteLine("Read listings");
+            Console.WriteLine("---------------");
+            // Create callback object
+            IProgress<Double> progressCallback = new Progress<Double>(progress =>
+            {
+                Console.Write("\r");
+                Console.Write("{0}% completed.", progress.ToString("#.00"));
+            });
+
+            // Ask user for start and end points of read operation
+            int start;
+            int end;
+
+            Boolean validInput = false;
+            do
+            {
+                start = menu.GetIntegerInput("Enter a starting ID: ");
+                end = menu.GetIntegerInput("Enter an ending ID: ");
+
+                if (start > end)
+                {
+                    Console.WriteLine("Start ID must be less than end ID. Please try again.");
+                }
+                else
+                {
+                    validInput = true;
+                }
+            } while (!validInput);
+
+            // Perform lengthy read operation
+            Console.WriteLine("Fetching data...");
+            progressCallback.Report(0);
+            reader.ReadCourseData(start, end, progressCallback);
+            progressCallback.Report(100);
+
+            // Print statistics
+            Console.WriteLine("Successfully read {0} out of {1} pages.", reader.CourseInstances.Count(), end);
+            foreach (var course in reader.CourseInstances)
+            {
+                Console.WriteLine(course.Name);
+            }
         }
     }
 }

@@ -33,15 +33,19 @@ namespace RMITLectopiaReader
         public void ReadCourseData(int start = 1, int end = Int16.MaxValue, IProgress<Double> callback = null)
         {
             var URLsRead = 0;
+            object lockObj = new Object();
             Parallel.For(start, end,
                 new ParallelOptions { MaxDegreeOfParallelism = 10 },
                 i =>
                 {
                     ReadRecordingList(i);
-                    URLsRead++;
-                    if (callback != null)
+                    lock (lockObj)
                     {
-                        callback.Report((double)URLsRead / end * 100);
+                        URLsRead++;
+                        if (callback != null)
+                        {
+                            callback.Report((double)URLsRead / (end - start) * 100);
+                        }
                     }
                 });
         }
@@ -102,7 +106,7 @@ namespace RMITLectopiaReader
                                 ".//tr[@class='sectionHeading']/td[2]").InnerText.Trim();
 
                             // Construct recording instance
-                            var recording = new Recording(recordingID, 
+                            var recording = new Recording(recordingID,
                                 recordingDate, duration);
 
                             // Retrieve list of file formats
@@ -127,7 +131,10 @@ namespace RMITLectopiaReader
             catch (WebException)
             {
                 // TODO: Log error
-                UnsuccessfulURLs.Add(URL);
+                lock (UnsuccessfulURLs)
+                {
+                    UnsuccessfulURLs.Add(URL);
+                }
             }
         }
 
