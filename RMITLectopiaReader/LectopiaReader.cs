@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
 using System.Globalization;
+using System.IO;
 
 namespace RMITLectopiaReader
 {
@@ -54,76 +55,28 @@ namespace RMITLectopiaReader
         {
             String URL = RECORDINGS_URL + id;
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
-            request.Method = "HEAD";
             request.AllowAutoRedirect = false;
             request.Proxy = null;
 
-            // Attempt to parse list at given URL
+            // Check if given URL points to a valid listing
+            // If list loaded successfully, load document
+            HtmlDocument document = null;
             try
             {
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
-                    // If ID points to a valid recording list, parse contents
                     if (response.StatusCode == HttpStatusCode.OK)
                     {
-                        HtmlWeb web = new HtmlAgilityPack.HtmlWeb();
-                        HtmlNode.ElementsFlags.Remove("form");
-                        HtmlNode.ElementsFlags.Remove("option");
-                        HtmlDocument document = web.Load(URL);
-
-                        // Retrieve subject title
-                        var title = document.DocumentNode.SelectSingleNode(
-                            "//table[@id='header']//h2").InnerText;
-
-                        // Construct course instance
-                        var course = new CourseInstance(id, title);
-
-                        // Retrieve nodes containing recording information
-                        var recordingNodes = document.DocumentNode.SelectNodes(
-                            "//table[@class='mainindex']");
-
-                        // Retrieve information from each node
-                        foreach (var node in recordingNodes)
+                        using (Stream responseStream = response.GetResponseStream())
                         {
-                            var headingNode = node.SelectSingleNode(
-                                ".//tr[@class='sectionHeading']//h3");
-
-                            // Retrieve timestamp
-                            var timestamp = headingNode.InnerText;
-                            timestamp = Regex.Replace(timestamp, "&nbsp;", "");
-                            timestamp = Regex.Replace(timestamp, @"\s+", " ").Trim();
-                            var recordingDate = DateTime.ParseExact(
-                                timestamp, "dd MMM yyyy - HH:mm",
-                                CultureInfo.CurrentCulture);
-
-                            // Retrieve recording ID
-                            var recordingID = Convert.ToInt32(
-                                headingNode.SelectSingleNode(".//a")
-                                .GetAttributeValue("id", 0));
-
-                            // Retrieve recording duration
-                            var duration = node.SelectSingleNode(
-                                ".//tr[@class='sectionHeading']/td[2]").InnerText.Trim();
-
-                            // Construct recording instance
-                            var recording = new Recording(recordingID,
-                                recordingDate, duration);
-
-                            // Retrieve list of file formats
-                            var options = node.SelectNodes(
-                                ".//form[contains(@name, 'Download')]//option[position() > 2]");
-                            if (options != null)
+                            using (StreamReader sr = new StreamReader(responseStream))
                             {
-                                var formatList = GetRecordingFormats(options);
-                                formatList.ForEach(f => recording.Formats.Add(f));
+                                HtmlNode.ElementsFlags.Remove("form");
+                                HtmlNode.ElementsFlags.Remove("option");
+                                document = new HtmlDocument();
+                                document.Load(sr);
                             }
-
-                            // Add recording to course instance
-                            course.Recordings.Add(recording);
                         }
-
-                        // Add course data to collection
-                        CourseInstances.Add(course);
                     }
                 }
             }
@@ -135,6 +88,67 @@ namespace RMITLectopiaReader
                 {
                     UnsuccessfulURLs.Add(URL);
                 }
+            }
+
+            // If document loaded successfully, parse contents
+            if (document != null)
+            {
+                // Retrieve subject title
+                var title = document.DocumentNode.SelectSingleNode(
+                    "//table[@id='header']//h2").InnerText;
+
+                // Construct course instance
+                var course = new CourseInstance(id, title);
+
+                // Retrieve nodes containing recording information
+                var recordingNodes = document.DocumentNode.SelectNodes(
+                    "//table[@class='mainindex']");
+
+                if (recordingNodes != null)
+                {
+                    // Retrieve information from each node
+                    foreach (var node in recordingNodes)
+                    {
+                        var headingNode = node.SelectSingleNode(
+                            ".//tr[@class='sectionHeading']//h3");
+
+                        // Retrieve timestamp
+                        var timestamp = headingNode.InnerText;
+                        timestamp = Regex.Replace(timestamp, "&nbsp;", "");
+                        timestamp = Regex.Replace(timestamp, @"\s+", " ").Trim();
+                        var recordingDate = DateTime.ParseExact(
+                            timestamp, "dd MMM yyyy - HH:mm",
+                            CultureInfo.CurrentCulture);
+
+                        // Retrieve recording ID
+                        var recordingID = Convert.ToInt32(
+                            headingNode.SelectSingleNode(".//a")
+                            .GetAttributeValue("id", 0));
+
+                        // Retrieve recording duration
+                        var duration = node.SelectSingleNode(
+                            ".//tr[@class='sectionHeading']/td[2]").InnerText.Trim();
+
+                        // Construct recording instance
+                        var recording = new Recording(recordingID,
+                            recordingDate, duration);
+
+                        // Retrieve list of file formats
+                        var options = node.SelectNodes(
+                            ".//form[contains(@name, 'Download')]//option[position() > 2]");
+                        if (options != null)
+                        {
+                            var formatList = GetRecordingFormats(options);
+                            formatList.ForEach(f => recording.Formats.Add(f));
+                        }
+
+                        // Add recording to course instance
+                        course.Recordings.Add(recording);
+                    }
+                }
+
+                // Add course data to collection
+                CourseInstances.Add(course);
             }
         }
 
