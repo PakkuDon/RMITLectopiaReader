@@ -52,6 +52,12 @@ namespace RMITLectopiaReader
 
         static void ReadListings(Menu menu, LectopiaReader reader)
         {
+            int startID;
+            int endID;
+            Boolean validInput = false;
+            int initialCourseCount = reader.CourseInstances.Count();
+            int initialFailCount = reader.UnsuccessfulURLs.Count();
+
             Console.WriteLine("Read listings");
             Console.WriteLine("---------------");
             // Create callback object
@@ -62,16 +68,13 @@ namespace RMITLectopiaReader
             });
 
             // Ask user for start and end points of read operation
-            int start;
-            int end;
-
-            Boolean validInput = false;
+            
             do
             {
-                start = menu.GetIntegerInput("Enter a starting ID: ");
-                end = menu.GetIntegerInput("Enter an ending ID: ");
+                startID = menu.GetIntegerInput("Enter a starting ID: ");
+                endID = menu.GetIntegerInput("Enter an ending ID: ");
 
-                if (start > end)
+                if (startID > endID)
                 {
                     Console.WriteLine("Start ID must be less than end ID. Please try again.");
                 }
@@ -82,17 +85,17 @@ namespace RMITLectopiaReader
             } while (!validInput);
 
             // Perform lengthy read operation
+            DateTime startTime = DateTime.Now;
             Console.WriteLine("Fetching data...");
             progressCallback.Report(0);
-            reader.ReadCourseData(start, end, progressCallback);
+            reader.ReadListingsInRange(startID, endID, progressCallback);
             progressCallback.Report(100);
+            DateTime endTime = DateTime.Now;
 
             // Print statistics
-            Console.WriteLine("Successfully read {0} out of {1} pages.", reader.CourseInstances.Count(), end);
-            foreach (var course in reader.CourseInstances)
-            {
-                Console.WriteLine(course.Name);
-            }
+            Console.WriteLine("Successfully read {0} out of {1} pages.", reader.CourseInstances.Count() - initialCourseCount, endID - startID);
+            Console.WriteLine("{0} connections timed out.", reader.UnsuccessfulURLs.Count() - initialFailCount);
+            Console.WriteLine("Operation took {0}", endTime - startTime);
         }
 
         static void SearchCourses(Menu menu, LectopiaReader reader)
@@ -106,7 +109,7 @@ namespace RMITLectopiaReader
             String searchTerm = Console.ReadLine();
 
             // Retrieve list of courses containing the given substring
-            var matchingCourses = reader.CourseInstances.Where(
+            var matchingCourses = reader.CourseInstances.Values.Where(
                 c => c.Name.ToLower().Contains(searchTerm.ToLower()));
 
             // Display search results
