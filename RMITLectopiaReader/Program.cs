@@ -25,8 +25,9 @@ namespace RMITLectopiaReader
             {
                 menu.DisplayOptions();
                 Console.WriteLine();
-                // TODO: Validation
+                
                 selectedOption = (MenuOption)menu.GetIntegerInput("Please select an option: ");
+                Console.WriteLine();
 
                 // Process selected option
                 switch (selectedOption)
@@ -39,6 +40,9 @@ namespace RMITLectopiaReader
                         break;
                     case MenuOption.EXPORT_JSON:
                         Console.WriteLine("Export JSON");
+                        break;
+                    case MenuOption.PROGRAM_STATISTICS:
+                        ProgramStatistics(menu, reader);
                         break;
                     case MenuOption.EXIT:
                         Console.WriteLine("Exiting");
@@ -122,6 +126,17 @@ namespace RMITLectopiaReader
                     Console.WriteLine("{0, -10} | {1, -20}", course.ID, course.Name);
                 }
             }
+        }
+
+        static void ProgramStatistics(Menu menu, LectopiaReader reader)
+        {
+            // Print heading
+            Console.WriteLine("Program statistics");
+            Console.WriteLine("--------------------");
+
+            // Display general information
+            Console.WriteLine("{0} listings stored in data", reader.CourseInstances.Count());
+            Console.WriteLine("{0} URLs retained for later re-attempt", reader.UnsuccessfulURLs.Count());
         }
     }
 }
