@@ -10,6 +10,7 @@ namespace RMITLectopiaReader
     {
         READ_LISTINGS = 1,
         SEARCH_COURSES,
+        DISPLAY_RECORDINGS,
         EXPORT_JSON,
         PROGRAM_STATISTICS,
         EXIT
@@ -35,9 +36,10 @@ namespace RMITLectopiaReader
         {
             Console.WriteLine("1) Read listings");
             Console.WriteLine("2) Search courses");
-            Console.WriteLine("3) Export to .json file");
-            Console.WriteLine("4) Display program statistics");
-            Console.WriteLine("5) Exit");
+            Console.WriteLine("3) Display recordings");
+            Console.WriteLine("4) Export to .json file");
+            Console.WriteLine("5) Display program statistics");
+            Console.WriteLine("6) Exit");
         }
 
         public int GetIntegerInput(String prompt)

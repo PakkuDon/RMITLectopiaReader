@@ -25,7 +25,7 @@ namespace RMITLectopiaReader
             {
                 menu.DisplayOptions();
                 Console.WriteLine();
-                
+
                 selectedOption = (MenuOption)menu.GetIntegerInput("Please select an option: ");
                 Console.WriteLine();
 
@@ -37,6 +37,9 @@ namespace RMITLectopiaReader
                         break;
                     case MenuOption.SEARCH_COURSES:
                         SearchCourses(menu, reader);
+                        break;
+                    case MenuOption.DISPLAY_RECORDINGS:
+                        DisplayRecordings(menu, reader);
                         break;
                     case MenuOption.EXPORT_JSON:
                         Console.WriteLine("Export JSON");
@@ -72,7 +75,7 @@ namespace RMITLectopiaReader
             });
 
             // Ask user for start and end points of read operation
-            
+
             do
             {
                 startID = menu.GetIntegerInput("Enter a starting ID: ");
@@ -137,6 +140,34 @@ namespace RMITLectopiaReader
             // Display general information
             Console.WriteLine("{0} listings stored in data", reader.CourseInstances.Count());
             Console.WriteLine("{0} URLs retained for later re-attempt", reader.UnsuccessfulURLs.Count());
+        }
+
+        static void DisplayRecordings(Menu menu, LectopiaReader reader)
+        {
+            // Print heading
+            Console.WriteLine("Display recordings");
+            Console.WriteLine("--------------------");
+
+            // Prompt user to enter a course ID
+            int id = menu.GetIntegerInput("Please enter a course ID: ");
+
+            // If reader has a course with the matching ID, display recordings
+            if (!reader.CourseInstances.ContainsKey(id))
+            {
+                Console.WriteLine("Failed to find course instance with matching ID.");
+            }
+            else
+            {
+                var course = reader.CourseInstances[id];
+                var recordings = course.Recordings;
+                Console.WriteLine("Displaying recordings for {0}", course.Name);
+                Console.WriteLine("-----------------------------");
+
+                foreach (var recording in recordings)
+                {
+                    Console.WriteLine("{0, -15} | {1, -10}", recording.DateRecorded, recording.Duration);
+                }
+            }
         }
     }
 }
