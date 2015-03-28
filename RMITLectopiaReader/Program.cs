@@ -5,6 +5,8 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using RMITLectopiaReader.Model;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace RMITLectopiaReader
 {
@@ -42,19 +44,19 @@ namespace RMITLectopiaReader
                 switch (selectedOption)
                 {
                     case MenuOption.READ_LISTINGS:
-                        ReadListings(menu, reader);
+                        ReadListings();
                         break;
                     case MenuOption.SEARCH_COURSES:
-                        SearchCourses(menu, reader);
+                        SearchCourses();
                         break;
                     case MenuOption.DISPLAY_RECORDINGS:
-                        DisplayRecordings(menu, reader);
+                        DisplayRecordings();
                         break;
                     case MenuOption.EXPORT_JSON:
-                        Console.WriteLine("Export JSON");
+                        ExportToJson();
                         break;
                     case MenuOption.PROGRAM_STATISTICS:
-                        ProgramStatistics(menu, reader);
+                        ProgramStatistics();
                         break;
                     case MenuOption.EXIT:
                         Console.WriteLine("Exiting");
@@ -66,7 +68,7 @@ namespace RMITLectopiaReader
             Console.ReadLine();
         }
 
-        void ReadListings(Menu menu, LectopiaReader reader)
+        void ReadListings()
         {
             int startID;
             int endID;
@@ -116,7 +118,7 @@ namespace RMITLectopiaReader
             Console.WriteLine("Operation took {0}", endTime - startTime);
         }
 
-        void SearchCourses(Menu menu, LectopiaReader reader)
+        void SearchCourses()
         {
             // Print heading
             Console.WriteLine("Search courses");
@@ -142,7 +144,7 @@ namespace RMITLectopiaReader
             }
         }
 
-        void ProgramStatistics(Menu menu, LectopiaReader reader)
+        void ProgramStatistics()
         {
             // Print heading
             Console.WriteLine("Program statistics");
@@ -153,7 +155,7 @@ namespace RMITLectopiaReader
             Console.WriteLine("{0} URLs retained for later re-attempt", reader.UnsuccessfulURLs.Count());
         }
 
-        void DisplayRecordings(Menu menu, LectopiaReader reader)
+        void DisplayRecordings()
         {
             // Print heading
             Console.WriteLine("Display recordings");
@@ -179,6 +181,25 @@ namespace RMITLectopiaReader
                     Console.WriteLine("{0, -15} | {1, -10}", recording.DateRecorded, recording.Duration);
                 }
             }
+        }
+
+        void ExportToJson()
+        {
+            // Print heading
+            Console.WriteLine("Export to JSON");
+            Console.WriteLine("----------------");
+
+            Console.WriteLine("Writing to data.json...");
+            // Write data out to file
+            // TODO: Prompt user for filepath to save at
+            using (StreamWriter sw = new StreamWriter("data.json"))
+            {
+                var jsonString = JsonConvert.SerializeObject(model.CourseInstances);
+                sw.Write(jsonString);
+            }
+
+            // Print completion message
+            Console.WriteLine("File saved.");
         }
 
         static void Main(string[] args)
