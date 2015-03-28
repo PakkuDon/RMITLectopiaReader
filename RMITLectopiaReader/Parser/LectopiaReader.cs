@@ -23,12 +23,10 @@ namespace RMITLectopiaReader
         // Constructor
         public LectopiaReader()
         {
-            CourseInstances = new Dictionary<int, CourseInstance>();
             UnsuccessfulURLs = new List<String>();
         }
 
         // Properties / Instance vars
-        public Dictionary<int, CourseInstance> CourseInstances { get; set; }
         public List<String> UnsuccessfulURLs { get; private set; }
 
         // -- Methods --
@@ -39,17 +37,27 @@ namespace RMITLectopiaReader
         /// <param name="startID"></param>
         /// <param name="endID"></param>
         /// <param name="callback"></param>
-        public void ReadListingsInRange(int startID = 1, int endID = Int16.MaxValue, IProgress<Double> callback = null)
+        public List<CourseInstance> ReadListingsInRange(
+            int startID = 1, int endID = Int16.MaxValue, IProgress<Double> callback = null)
         {
             var URLsRead = 0;
             object lockObj = new Object();
+            var courses = new List<CourseInstance>();
+
             Parallel.For(startID, endID,
                 new ParallelOptions { MaxDegreeOfParallelism = MAX_CONNECTIONS },
                 i =>
                 {
-                    ReadRecordingPage(i);
+                    var courseInstance = ReadRecordingPage(i);
                     lock (lockObj)
                     {
+                        // If course instance data added successfully, add to list
+                        if (courseInstance != null)
+                        {
+                            courses.Add(courseInstance);
+                        }
+
+                        // Update and report progress
                         URLsRead++;
                         if (callback != null)
                         {
@@ -57,6 +65,7 @@ namespace RMITLectopiaReader
                         }
                     }
                 });
+            return courses;
         }
 
         /// <summary>
@@ -65,7 +74,7 @@ namespace RMITLectopiaReader
         /// in a form of a course instance object.
         /// </summary>
         /// <param name="id"></param>
-        public void ReadRecordingPage(int id)
+        public CourseInstance ReadRecordingPage(int id)
         {
             String URL = RECORDINGS_URL + id;
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
@@ -119,8 +128,9 @@ namespace RMITLectopiaReader
                 recordings.ForEach(r => course.Recordings.Add(r));
 
                 // Add course data to collection
-                CourseInstances.Add(id, course);
+                return course;
             }
+            return null;
         }
 
         /// <summary>

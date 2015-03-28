@@ -4,17 +4,26 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using RMITLectopiaReader.Model;
 
 namespace RMITLectopiaReader
 {
     class Program
     {
-        static void Main(string[] args)
-        {
-            // Initialize necessary components
-            var reader = new LectopiaReader();
-            var menu = new Menu();
+        private LectopiaReader reader;
+        private LectopiaModel model;
+        private Menu menu;
 
+        // Constructor
+        public Program()
+        {
+            reader = new LectopiaReader();
+            model = new LectopiaModel();
+            menu = new Menu();
+        }
+
+        public void Run()
+        {
             // Print heading
             menu.DisplayHeader();
             Console.WriteLine("Started at {0}", DateTime.Now.ToString());
@@ -57,12 +66,11 @@ namespace RMITLectopiaReader
             Console.ReadLine();
         }
 
-        static void ReadListings(Menu menu, LectopiaReader reader)
+        void ReadListings(Menu menu, LectopiaReader reader)
         {
             int startID;
             int endID;
             Boolean validInput = false;
-            int initialCourseCount = reader.CourseInstances.Count();
             int initialFailCount = reader.UnsuccessfulURLs.Count();
 
             Console.WriteLine("Read listings");
@@ -95,17 +103,20 @@ namespace RMITLectopiaReader
             DateTime startTime = DateTime.Now;
             Console.WriteLine("Fetching data...");
             progressCallback.Report(0);
-            reader.ReadListingsInRange(startID, endID, progressCallback);
+            List<CourseInstance> courses = reader.ReadListingsInRange(startID, endID, progressCallback);
             progressCallback.Report(100);
             DateTime endTime = DateTime.Now;
 
+            // Add course information to model
+            courses.ForEach(c => model.CourseInstances[c.ID] = c);
+
             // Print statistics
-            Console.WriteLine("Successfully read {0} out of {1} pages.", reader.CourseInstances.Count() - initialCourseCount, endID - startID);
+            Console.WriteLine("Successfully read {0} out of {1} pages.", courses.Count(), endID - startID);
             Console.WriteLine("{0} connections timed out.", reader.UnsuccessfulURLs.Count() - initialFailCount);
             Console.WriteLine("Operation took {0}", endTime - startTime);
         }
 
-        static void SearchCourses(Menu menu, LectopiaReader reader)
+        void SearchCourses(Menu menu, LectopiaReader reader)
         {
             // Print heading
             Console.WriteLine("Search courses");
@@ -116,7 +127,7 @@ namespace RMITLectopiaReader
             String searchTerm = Console.ReadLine();
 
             // Retrieve list of courses containing the given substring
-            var matchingCourses = reader.CourseInstances.Values.Where(
+            var matchingCourses = model.CourseInstances.Values.Where(
                 c => c.Name.ToLower().Contains(searchTerm.ToLower()));
 
             // Display search results
@@ -131,18 +142,18 @@ namespace RMITLectopiaReader
             }
         }
 
-        static void ProgramStatistics(Menu menu, LectopiaReader reader)
+        void ProgramStatistics(Menu menu, LectopiaReader reader)
         {
             // Print heading
             Console.WriteLine("Program statistics");
             Console.WriteLine("--------------------");
 
             // Display general information
-            Console.WriteLine("{0} listings stored in data", reader.CourseInstances.Count());
+            Console.WriteLine("{0} listings stored in data", model.CourseInstances.Count());
             Console.WriteLine("{0} URLs retained for later re-attempt", reader.UnsuccessfulURLs.Count());
         }
 
-        static void DisplayRecordings(Menu menu, LectopiaReader reader)
+        void DisplayRecordings(Menu menu, LectopiaReader reader)
         {
             // Print heading
             Console.WriteLine("Display recordings");
@@ -152,13 +163,13 @@ namespace RMITLectopiaReader
             int id = menu.GetIntegerInput("Please enter a course ID: ");
 
             // If reader has a course with the matching ID, display recordings
-            if (!reader.CourseInstances.ContainsKey(id))
+            if (!model.CourseInstances.ContainsKey(id))
             {
                 Console.WriteLine("Failed to find course instance with matching ID.");
             }
             else
             {
-                var course = reader.CourseInstances[id];
+                var course = model.CourseInstances[id];
                 var recordings = course.Recordings;
                 Console.WriteLine("Displaying recordings for {0}", course.Name);
                 Console.WriteLine("-----------------------------");
@@ -168,6 +179,11 @@ namespace RMITLectopiaReader
                     Console.WriteLine("{0, -15} | {1, -10}", recording.DateRecorded, recording.Duration);
                 }
             }
+        }
+
+        static void Main(string[] args)
+        {
+            new Program().Run();
         }
     }
 }
