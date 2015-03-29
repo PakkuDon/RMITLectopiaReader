@@ -6,24 +6,32 @@ using System.Threading.Tasks;
 
 namespace RMITLectopiaReader
 {
-    enum MenuOption
-    {
-        READ_LISTINGS = 1,
-        SEARCH_COURSES,
-        DISPLAY_RECORDINGS,
-        EXPORT_JSON,
-        PROGRAM_STATISTICS,
-        EXIT
-    }
-
     class Menu
     {
+        public class MenuOption
+        {
+            // Properties
+            public String Text { get; private set; }
+            public Action Method { get; private set; }
+
+            // Constructor
+            public MenuOption(String text, Action method = null)
+            {
+                this.Text = text;
+                this.Method = method;
+            }
+        }
+
         // Constants for status/error codes
         private const int INVALID_INPUT = -1;
+
+        // Instance variables
+        public Dictionary<int, MenuOption> Options { get; private set; }
 
         // Constructor
         public Menu()
         {
+            Options = new Dictionary<int, MenuOption>();
         }
 
         public void DisplayHeader()
@@ -34,12 +42,15 @@ namespace RMITLectopiaReader
 
         public void DisplayOptions()
         {
-            Console.WriteLine("1) Read listings");
-            Console.WriteLine("2) Search courses");
-            Console.WriteLine("3) Display recordings");
-            Console.WriteLine("4) Export to .json file");
-            Console.WriteLine("5) Display program statistics");
-            Console.WriteLine("6) Exit");
+            foreach (var key in Options.Keys)
+            {
+                Console.WriteLine("{0}: {1}", key, Options[key].Text);
+            }
+        }
+
+        public void AddOption(String text, Action method = null)
+        {
+            Options[Options.Count() + 1] = new MenuOption(text, method);
         }
 
         public int GetIntegerInput(String prompt)

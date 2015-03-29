@@ -30,41 +30,42 @@ namespace RMITLectopiaReader
             menu.DisplayHeader();
             Console.WriteLine("Started at {0}", DateTime.Now.ToString());
 
-            MenuOption selectedOption;
+            int selectedOption;
 
             do
             {
                 menu.DisplayOptions();
                 Console.WriteLine();
 
-                selectedOption = (MenuOption)menu.GetIntegerInput("Please select an option: ");
+                // Prompt user for input
+                selectedOption = menu.GetIntegerInput("Please select an option: ");
                 Console.WriteLine();
 
-                // Process selected option
-                switch (selectedOption)
+                // If valid option selected, process selected option
+                // Else, print error
+                if (menu.Options.ContainsKey(selectedOption))
                 {
-                    case MenuOption.READ_LISTINGS:
-                        ReadListings();
+                    Menu.MenuOption option = menu.Options[selectedOption];
+                    // If non-exit option selected, call relevant method
+                    // Else, end loop
+                    if (option.Method != null)
+                    {
+                        option.Method();
+                    }
+                    else
+                    {
                         break;
-                    case MenuOption.SEARCH_COURSES:
-                        SearchCourses();
-                        break;
-                    case MenuOption.DISPLAY_RECORDINGS:
-                        DisplayRecordings();
-                        break;
-                    case MenuOption.EXPORT_JSON:
-                        ExportToJson();
-                        break;
-                    case MenuOption.PROGRAM_STATISTICS:
-                        ProgramStatistics();
-                        break;
-                    case MenuOption.EXIT:
-                        Console.WriteLine("Exiting");
-                        break;
+                    }
                 }
+                else
+                {
+                    Console.WriteLine("Invalid option. Please try again.");
+                }
+                
                 Console.WriteLine();
-            } while (selectedOption != MenuOption.EXIT);
+            } while (true);
 
+            Console.WriteLine("Program terminating. Press ENTER to exit.");
             Console.ReadLine();
         }
 
@@ -204,7 +205,18 @@ namespace RMITLectopiaReader
 
         static void Main(string[] args)
         {
-            new Program().Run();
+            var program = new Program();
+
+            // Add options to menu;
+            program.menu.AddOption("Read listings", program.ReadListings);
+            program.menu.AddOption("Search courses", program.SearchCourses);
+            program.menu.AddOption("Display recordings", program.DisplayRecordings);
+            program.menu.AddOption("Export to JSON", program.ExportToJson);
+            program.menu.AddOption("Program statistics", program.ProgramStatistics);
+            program.menu.AddOption("Exit");
+
+            // Initiate main loop
+            program.Run();
         }
     }
 }
