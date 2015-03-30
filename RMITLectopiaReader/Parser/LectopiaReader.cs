@@ -23,11 +23,11 @@ namespace RMITLectopiaReader
         // Constructor
         public LectopiaReader()
         {
-            UnsuccessfulURLs = new List<String>();
+            TimedOutIDs = new List<int>();
         }
 
         // Properties / Instance vars
-        public List<String> UnsuccessfulURLs { get; private set; }
+        public List<int> TimedOutIDs { get; private set; }
 
         // -- Methods --
         /// <summary>
@@ -65,6 +65,40 @@ namespace RMITLectopiaReader
                         }
                     }
                 });
+            return courses;
+        }
+
+        public List<CourseInstance> ReadFailedURLs(IProgress<Double> callback = null)
+        {
+            var courses = new List<CourseInstance>();
+            var readIDs = new List<int>();
+            var lockObj = new object();
+            var reads = 0;
+
+            Parallel.ForEach(TimedOutIDs, i =>
+            {
+                var course = ReadRecordingPage(i);
+
+                lock (lockObj)
+                {
+                    if (course != null)
+                    {
+                        courses.Add(course);
+                        readIDs.Add(i);
+                    }
+
+                    // Update and report progress
+                    reads++;
+                    if (callback != null)
+                    {
+                        callback.Report((double)reads / TimedOutIDs.Count() * 100);
+                    }
+                }
+            });
+
+            // Remove successfully read IDs from list of timed out IDs
+            readIDs.ForEach(id => TimedOutIDs.Remove(id));
+
             return courses;
         }
 
@@ -107,9 +141,9 @@ namespace RMITLectopiaReader
             catch (WebException)
             {
                 // TODO: Log error
-                lock (UnsuccessfulURLs)
+                lock (TimedOutIDs)
                 {
-                    UnsuccessfulURLs.Add(URL);
+                    TimedOutIDs.Add(id);
                 }
             }
 

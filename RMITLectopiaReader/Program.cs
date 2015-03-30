@@ -15,6 +15,7 @@ namespace RMITLectopiaReader
         private LectopiaReader reader;
         private LectopiaModel model;
         private Menu menu;
+        private IProgress<Double> progressCallback;
 
         // Constructor
         public Program()
@@ -22,6 +23,11 @@ namespace RMITLectopiaReader
             reader = new LectopiaReader();
             model = new LectopiaModel();
             menu = new Menu();
+            progressCallback = new Progress<Double>(progress =>
+            {
+                Console.Write("\r");
+                Console.Write("{0}% completed.", progress.ToString("#.00"));
+            });
         }
 
         public void Run()
@@ -61,7 +67,7 @@ namespace RMITLectopiaReader
                 {
                     Console.WriteLine("Invalid option. Please try again.");
                 }
-                
+
                 Console.WriteLine();
             } while (true);
 
@@ -74,16 +80,10 @@ namespace RMITLectopiaReader
             int startID;
             int endID;
             Boolean validInput = false;
-            int initialFailCount = reader.UnsuccessfulURLs.Count();
+            int initialFailCount = reader.TimedOutIDs.Count();
 
             Console.WriteLine("Read listings");
             Console.WriteLine("---------------");
-            // Create callback object
-            IProgress<Double> progressCallback = new Progress<Double>(progress =>
-            {
-                Console.Write("\r");
-                Console.Write("{0}% completed.", progress.ToString("#.00"));
-            });
 
             // Ask user for start and end points of read operation
             // If user enters empty line, return to menu
@@ -126,7 +126,7 @@ namespace RMITLectopiaReader
 
             // Print statistics
             Console.WriteLine("Successfully read {0} out of {1} pages.", courses.Count(), endID - startID);
-            Console.WriteLine("{0} connections timed out.", reader.UnsuccessfulURLs.Count() - initialFailCount);
+            Console.WriteLine("{0} connections timed out.", reader.TimedOutIDs.Count() - initialFailCount);
             Console.WriteLine("Operation took {0}", endTime - startTime);
         }
 
@@ -164,7 +164,7 @@ namespace RMITLectopiaReader
 
             // Display general information
             Console.WriteLine("{0} listings stored in data", model.CourseInstances.Count());
-            Console.WriteLine("{0} URLs retained for later re-attempt", reader.UnsuccessfulURLs.Count());
+            Console.WriteLine("{0} URLs retained for later re-attempt", reader.TimedOutIDs.Count());
         }
 
         void DisplayRecordings()
@@ -220,6 +220,30 @@ namespace RMITLectopiaReader
             Console.WriteLine("File saved.");
         }
 
+        void RetryFailedReads()
+        {
+            // If no failed URLs to read, print error and return
+            if (reader.TimedOutIDs.Count() == 0)
+            {
+                Console.WriteLine("No URLs to reattempt.");
+            }
+            else
+            {
+                // Print heading
+                Console.WriteLine("Retry failed reads");
+                Console.WriteLine("---------------------");
+
+                // Perform read operation
+                var courses = reader.ReadFailedURLs(progressCallback);
+
+                // Store read data in model
+                foreach (var course in courses)
+                {
+                    model.CourseInstances[course.ID] = course;
+                }
+            }
+        }
+
         static void Main(string[] args)
         {
             var program = new Program();
@@ -230,6 +254,7 @@ namespace RMITLectopiaReader
             program.menu.AddOption("Display recordings", program.DisplayRecordings);
             program.menu.AddOption("Export to JSON", program.ExportToJson);
             program.menu.AddOption("Program statistics", program.ProgramStatistics);
+            program.menu.AddOption("Retry failed reads", program.RetryFailedReads);
             program.menu.AddOption("Exit");
 
             // Initiate main loop
