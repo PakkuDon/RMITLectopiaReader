@@ -86,12 +86,23 @@ namespace RMITLectopiaReader
             });
 
             // Ask user for start and end points of read operation
-
+            // If user enters empty line, return to menu
             do
             {
                 startID = menu.GetIntegerInput("Enter a starting ID: ");
-                endID = menu.GetIntegerInput("Enter an ending ID: ");
+                if (startID == Menu.DEFAULT_OPTION)
+                {
+                    return;
+                }
 
+                endID = menu.GetIntegerInput("Enter an ending ID: ");
+                if (endID == Menu.DEFAULT_OPTION)
+                {
+                    return;
+                }
+
+                // If input start and end IDs are invalid, print error
+                // Else set flag to exit loop
                 if (startID > endID)
                 {
                     Console.WriteLine("Start ID must be less than end ID. Please try again.");
@@ -164,6 +175,12 @@ namespace RMITLectopiaReader
 
             // Prompt user to enter a course ID
             int id = menu.GetIntegerInput("Please enter a course ID: ");
+
+            // If user enters empty line, cancel operation
+            if (id == Menu.DEFAULT_OPTION)
+            {
+                return;
+            }
 
             // If reader has a course with the matching ID, display recordings
             if (!model.CourseInstances.ContainsKey(id))

@@ -23,7 +23,8 @@ namespace RMITLectopiaReader
         }
 
         // Constants for status/error codes
-        private const int INVALID_INPUT = -1;
+        public const int INVALID_INPUT = -1;
+        public const int DEFAULT_OPTION = -2;
 
         // Instance variables
         public Dictionary<int, MenuOption> Options { get; private set; }
@@ -61,7 +62,13 @@ namespace RMITLectopiaReader
                 Console.Write(prompt);
                 try
                 {
-                    value = Convert.ToInt32(Console.ReadLine());
+                    String input = Console.ReadLine().Trim();
+                    // If empty line entered, return 'cancel' status
+                    if (input.Length == 0)
+                    {
+                        return DEFAULT_OPTION;
+                    }
+                    value = Convert.ToInt32(input);
                 }
                 catch (System.FormatException)
                 {
