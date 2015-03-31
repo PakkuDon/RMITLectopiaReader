@@ -141,8 +141,10 @@ namespace RMITLectopiaReader
             String searchTerm = Console.ReadLine();
 
             // Retrieve list of courses containing the given substring
-            var matchingCourses = model.CourseInstances.Values.Where(
-                c => c.Name.ToLower().Contains(searchTerm.ToLower()));
+            var matchingCourses = from c in model.CourseInstances.Values
+                                  where c.Name.ToLower().Contains(searchTerm.ToLower())
+                                  orderby c.Name
+                                  select c;
 
             // Display search results
             Console.WriteLine("{0} results found.", matchingCourses.Count());
@@ -190,13 +192,18 @@ namespace RMITLectopiaReader
             else
             {
                 var course = model.CourseInstances[id];
-                var recordings = course.Recordings;
+                var recordings = from r in course.Recordings
+                                 orderby r.DateRecorded
+                                 select r;
                 Console.WriteLine("Displaying recordings for {0}", course.Name);
-                Console.WriteLine("-----------------------------");
+                Console.WriteLine("{0, -10} | {1, -8} | {2, -10}", "Date", "Time", "Duration");
 
                 foreach (var recording in recordings)
                 {
-                    Console.WriteLine("{0, -15} | {1, -10}", recording.DateRecorded, recording.Duration);
+                    Console.WriteLine("{0, -10} | {1, -8} | {2, -10}", 
+                        recording.DateRecorded.ToShortDateString(), 
+                        recording.DateRecorded.ToShortTimeString(), 
+                        recording.Duration);
                 }
             }
         }
