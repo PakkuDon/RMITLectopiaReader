@@ -23,10 +23,14 @@ namespace RMITLectopiaReader
             reader = new LectopiaReader();
             model = new LectopiaModel();
             menu = new Menu();
+            var lockObj = new Object();
             progressCallback = new Progress<Double>(progress =>
             {
-                Console.Write("\r");
-                Console.Write("{0}% completed.", progress.ToString("#.00"));
+                lock (lockObj)
+                {
+                    Console.Write("\r");
+                    Console.Write("{0}% completed.", progress.ToString("#.00"));
+                }
             });
         }
 
@@ -200,9 +204,9 @@ namespace RMITLectopiaReader
 
                 foreach (var recording in recordings)
                 {
-                    Console.WriteLine("{0, -10} | {1, -8} | {2, -10}", 
-                        recording.DateRecorded.ToShortDateString(), 
-                        recording.DateRecorded.ToShortTimeString(), 
+                    Console.WriteLine("{0, -10} | {1, -8} | {2, -10}",
+                        recording.DateRecorded.ToShortDateString(),
+                        recording.DateRecorded.ToShortTimeString(),
                         recording.Duration);
                 }
             }
