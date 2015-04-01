@@ -98,7 +98,6 @@ namespace RMITLectopiaReader
 
             // Remove successfully read IDs from list of timed out IDs
             readIDs.ForEach(id => TimedOutIDs.Remove(id));
-
             return courses;
         }
 
@@ -120,22 +119,7 @@ namespace RMITLectopiaReader
             HtmlDocument document = null;
             try
             {
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-                {
-                    if (response.StatusCode == HttpStatusCode.OK)
-                    {
-                        using (Stream responseStream = response.GetResponseStream())
-                        {
-                            using (StreamReader sr = new StreamReader(responseStream))
-                            {
-                                HtmlNode.ElementsFlags.Remove("form");
-                                HtmlNode.ElementsFlags.Remove("option");
-                                document = new HtmlDocument();
-                                document.Load(sr);
-                            }
-                        }
-                    }
-                }
+                document = LoadDocument(URL);
             }
             // In event of a connection timeout, add attempted URL to collection for a later retry
             catch (WebException)
@@ -157,9 +141,31 @@ namespace RMITLectopiaReader
                 // Construct course instance
                 var course = new CourseInstance(id, title);
 
-                // Extract associated recordings and add to course
+                // Extract recordings from initial page
                 var recordings = GetRecordings(document);
                 recordings.ForEach(r => course.Recordings.Add(r));
+
+                // Extract page links
+                // If any pages found, extract data
+                var pageNodes = document.DocumentNode.SelectNodes(
+                                "(//td[@class='noNesting'])[1]/a");
+                if (pageNodes != null)
+                {
+                    var pageLinks = from a in pageNodes
+                                select a.GetAttributeValue("href", "");
+
+                    // Extract recordings for each page
+                    for (var i = 0; i < pageLinks.Count(); i++)
+                    {
+                        document = LoadDocument(BASE_URL + pageLinks.ElementAt(i));
+                        if (document != null)
+                        {
+                            recordings = GetRecordings(document);
+                            recordings.ForEach(r => course.Recordings.Add(r));
+                        }
+                        // TODO: If document load fails, retain link for later
+                    }
+                }
 
                 // Add course data to collection
                 return course;
@@ -245,9 +251,36 @@ namespace RMITLectopiaReader
                     formatList.Add(formatOption);
                 }
             }
-
             return formatList;
         }
-    }
 
+        private HtmlDocument LoadDocument(String URL)
+        {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
+            request.AllowAutoRedirect = false;
+            request.Proxy = null;
+
+            // Check if given URL points to a valid listing
+            // If list loaded successfully, load document
+            HtmlDocument document = null;
+
+            using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+            {
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    using (Stream responseStream = response.GetResponseStream())
+                    {
+                        using (StreamReader sr = new StreamReader(responseStream))
+                        {
+                            HtmlNode.ElementsFlags.Remove("form");
+                            HtmlNode.ElementsFlags.Remove("option");
+                            document = new HtmlDocument();
+                            document.Load(sr);
+                        }
+                    }
+                }
+            }
+            return document;
+        }
+    }
 }
