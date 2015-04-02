@@ -20,6 +20,24 @@ namespace RMITLectopiaReader
                 this.Text = text;
                 this.Method = method;
             }
+
+            /// <summary>
+            /// Generates a banner containing the option's text.
+            /// </summary>
+            /// <returns></returns>
+            public String GetBannerText()
+            {
+                StringBuilder sb = new StringBuilder(Text);
+
+                // Create a dashed-line around the same size as the option text
+                sb.AppendLine();
+                for (var i = 0; i < Text.Length; i++)
+                {
+                    sb.Append("-");
+                }
+
+                return sb.ToString();
+            }
         }
 
         // Constants for status/error codes

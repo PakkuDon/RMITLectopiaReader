@@ -29,11 +29,14 @@ namespace RMITLectopiaReader
                 lock (lockObj)
                 {
                     Console.Write("\r");
-                    Console.Write("{0}% completed.", progress.ToString("#.00"));
+                    Console.Write("{0}% completed.", progress.ToString("0.00"));
                 }
             });
         }
 
+        /// <summary>
+        /// Performs the main program loop.
+        /// </summary>
         public void Run()
         {
             // Print heading
@@ -56,12 +59,14 @@ namespace RMITLectopiaReader
                 if (menu.Options.ContainsKey(selectedOption))
                 {
                     Menu.MenuOption option = menu.Options[selectedOption];
-                    // If non-exit option selected, call relevant method
-                    // Else, end loop
+                    // If non-exit option selected, print heading and 
+                    // call relevant method
                     if (option.Method != null)
                     {
+                        Console.WriteLine(option.GetBannerText());
                         option.Method();
                     }
+                    // Else, end program
                     else
                     {
                         break;
@@ -75,19 +80,21 @@ namespace RMITLectopiaReader
                 Console.WriteLine();
             } while (true);
 
+            // Print exit message
             Console.WriteLine("Program terminating. Press ENTER to exit.");
             Console.ReadLine();
         }
 
+        /// <summary>
+        /// Loads recording data for course instancess with IDs between those 
+        /// specified by the user. Extracted data is added to model.
+        /// </summary>
         void ReadListings()
         {
             int startID;
             int endID;
             Boolean validInput = false;
             int initialFailCount = reader.TimedOutIDs.Count();
-
-            Console.WriteLine("Read listings");
-            Console.WriteLine("---------------");
 
             // Ask user for start and end points of read operation
             // If user enters empty line, return to menu
@@ -122,7 +129,6 @@ namespace RMITLectopiaReader
             Console.WriteLine("Fetching data...");
             progressCallback.Report(0);
             List<CourseInstance> courses = reader.ReadListingsInRange(startID, endID, progressCallback);
-            progressCallback.Report(100);
             DateTime endTime = DateTime.Now;
 
             // Add course information to model
@@ -134,12 +140,11 @@ namespace RMITLectopiaReader
             Console.WriteLine("Operation took {0}", endTime - startTime);
         }
 
+        /// <summary>
+        /// Displays a list of courses containing the search term entered by the user.
+        /// </summary>
         void SearchCourses()
         {
-            // Print heading
-            Console.WriteLine("Search courses");
-            Console.WriteLine("----------------");
-
             // Prompt user for a search term
             Console.Write("Search term: ");
             String searchTerm = Console.ReadLine();
@@ -162,23 +167,21 @@ namespace RMITLectopiaReader
             }
         }
 
+        /// <summary>
+        /// Displays some trivial numbers about the program's current session.
+        /// </summary>
         void ProgramStatistics()
         {
-            // Print heading
-            Console.WriteLine("Program statistics");
-            Console.WriteLine("--------------------");
-
             // Display general information
             Console.WriteLine("{0} listings stored in data", model.CourseInstances.Count());
             Console.WriteLine("{0} URLs retained for later re-attempt", reader.TimedOutIDs.Count());
         }
 
+        /// <summary>
+        /// Lists details for recordings owned by a given course instance.
+        /// </summary>
         void DisplayRecordings()
         {
-            // Print heading
-            Console.WriteLine("Display recordings");
-            Console.WriteLine("--------------------");
-
             // Prompt user to enter a course ID
             int id = menu.GetIntegerInput("Please enter a course ID: ");
 
@@ -189,11 +192,7 @@ namespace RMITLectopiaReader
             }
 
             // If reader has a course with the matching ID, display recordings
-            if (!model.CourseInstances.ContainsKey(id))
-            {
-                Console.WriteLine("Failed to find course instance with matching ID.");
-            }
-            else
+            if (model.CourseInstances.ContainsKey(id))
             {
                 var course = model.CourseInstances[id];
                 var recordings = from r in course.Recordings
@@ -210,14 +209,19 @@ namespace RMITLectopiaReader
                         recording.Duration);
                 }
             }
+            // Else, print error message
+            else
+            {
+                Console.WriteLine("Failed to find course instance with matching ID.");
+            }
         }
 
+        /// <summary>
+        /// Constructs a JSON string based on the contents of the model. JSON string is
+        /// then written to some file.
+        /// </summary>
         void ExportToJson()
         {
-            // Print heading
-            Console.WriteLine("Export to JSON");
-            Console.WriteLine("----------------");
-
             Console.WriteLine("Writing to data.json...");
             // Write data out to file
             // TODO: Prompt user for filepath to save at
@@ -231,6 +235,10 @@ namespace RMITLectopiaReader
             Console.WriteLine("File saved.");
         }
 
+        /// <summary>
+        /// Attempts to retrieve recording data from previously timed-out 
+        /// read attempts.
+        /// </summary>
         void RetryFailedReads()
         {
             // If no failed URLs to read, print error and return
