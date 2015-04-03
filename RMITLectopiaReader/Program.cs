@@ -223,11 +223,24 @@ namespace RMITLectopiaReader
         void ExportToJson()
         {
             Console.WriteLine("Writing to data.json...");
+
+            // Prepare output data
+            // Sort courses by name, sort recordings by date
+            var courses = from c in model.CourseInstances.Values
+                          orderby c.Name
+                          select c;
+            foreach (var course in courses)
+            {
+                course.Recordings = course.Recordings.OrderByDescending(r => r.DateRecorded).ToList();
+            }
+
+            var outputData = new { Courses = courses, DateGenerated = DateTime.Now };
+
             // Write data out to file
             // TODO: Prompt user for filepath to save at
             using (StreamWriter sw = new StreamWriter("data.json"))
             {
-                var jsonString = JsonConvert.SerializeObject(model.CourseInstances);
+                var jsonString = JsonConvert.SerializeObject(outputData);
                 sw.Write(jsonString);
             }
 
