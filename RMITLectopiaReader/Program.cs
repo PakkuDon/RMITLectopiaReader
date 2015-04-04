@@ -94,7 +94,7 @@ namespace RMITLectopiaReader
             int startID;
             int endID;
             Boolean validInput = false;
-            int initialFailCount = reader.TimedOutIDs.Count();
+            int initialFailCount = reader.FailedReads.Count();
 
             // Ask user for start and end points of read operation
             // If user enters empty line, return to menu
@@ -136,7 +136,7 @@ namespace RMITLectopiaReader
 
             // Print statistics
             Console.WriteLine("Successfully read {0} out of {1} pages.", courses.Count(), endID - startID);
-            Console.WriteLine("{0} connections timed out.", reader.TimedOutIDs.Count() - initialFailCount);
+            Console.WriteLine("{0} connections timed out.", reader.FailedReads.Count() - initialFailCount);
             Console.WriteLine("Operation took {0}", endTime - startTime);
         }
 
@@ -174,7 +174,7 @@ namespace RMITLectopiaReader
         {
             // Display general information
             Console.WriteLine("{0} listings stored in data", model.CourseInstances.Count());
-            Console.WriteLine("{0} URLs retained for later re-attempt", reader.TimedOutIDs.Count());
+            Console.WriteLine("{0} URLs retained for later re-attempt", reader.FailedReads.Count());
         }
 
         /// <summary>
@@ -255,7 +255,7 @@ namespace RMITLectopiaReader
         void RetryFailedReads()
         {
             // If no failed URLs to read, print error and return
-            if (reader.TimedOutIDs.Count() == 0)
+            if (reader.FailedReads.Count() == 0)
             {
                 Console.WriteLine("No URLs to reattempt.");
             }
@@ -271,7 +271,18 @@ namespace RMITLectopiaReader
                 // Store read data in model
                 foreach (var course in courses)
                 {
-                    model.CourseInstances[course.ID] = course;
+                    // If dummy course object, add retrieved recordings to 
+                    // corresponding course in memory
+                    if (course.Name == null)
+                    {
+                        var courseToUpdate = model.CourseInstances[course.ID];
+                        course.Recordings.ForEach(r => courseToUpdate.Recordings.Add(r));
+                    }
+                    // Else, add new course to model
+                    else
+                    {
+                        model.CourseInstances[course.ID] = course;
+                    }
                 }
             }
         }

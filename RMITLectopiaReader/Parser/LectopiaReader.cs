@@ -23,11 +23,11 @@ namespace RMITLectopiaReader
         // Constructor
         public LectopiaReader()
         {
-            TimedOutIDs = new List<int>();
+            FailedReads = new List<Tuple<int, String>>();
         }
 
         // Properties / Instance vars
-        public List<int> TimedOutIDs { get; private set; }
+        public List<Tuple<int, String>> FailedReads { get; set; }
 
         // -- Methods --
         /// <summary>
@@ -44,11 +44,12 @@ namespace RMITLectopiaReader
             object lockObj = new Object();
             var courses = new List<CourseInstance>();
 
+            // Attempt to connect to constructed URLs in parallel
             Parallel.For(startID, endID,
                 new ParallelOptions { MaxDegreeOfParallelism = MAX_CONNECTIONS },
                 i =>
                 {
-                    var courseInstance = ReadRecordingPage(i);
+                    var courseInstance = ReadCourseRecordings(i);
                     lock (lockObj)
                     {
                         // If course instance data added successfully, add to list
@@ -71,33 +72,74 @@ namespace RMITLectopiaReader
         public List<CourseInstance> ReadFailedURLs(IProgress<Double> callback = null)
         {
             var courses = new List<CourseInstance>();
-            var readIDs = new List<int>();
+            var readPairs = new List<Tuple<int, String>>();
             var lockObj = new object();
             var reads = 0;
 
-            Parallel.ForEach(TimedOutIDs, i =>
+            Parallel.ForEach(FailedReads, urlPair =>
             {
-                var course = ReadRecordingPage(i);
-
-                lock (lockObj)
+                bool readSuccessful = false;
+                // If previous read failed on index URL, attempt to parse data 
+                // and add to courses as normal
+                if (urlPair.Item2 == null)
                 {
+                    var course = ReadCourseRecordings(urlPair.Item1);
                     if (course != null)
                     {
-                        courses.Add(course);
-                        readIDs.Add(i);
+                        lock (courses)
+                        {
+                            courses.Add(course);
+                            readSuccessful = true;
+                        }
                     }
+                }
+                // Else, current URL is a failed attempt at a page read
+                else
+                {
+                    HtmlDocument document = LoadDocument(urlPair.Item2);
+                    // If document contents read successfully, retrieve recording data and 
+                    // add to dummy course object
+                    if (document != null)
+                    {
+                        var recordings = GetRecordings(document);
+                        CourseInstance course;
+                        lock (courses)
+                        {
+                            course = courses.Find(c => c.ID == urlPair.Item1);
+                            if (course == null)
+                            {
+                                course = new CourseInstance(urlPair.Item1, null);
+                                courses.Add(course);
+                            }
+                        }
+                        recordings.ForEach(r => course.Recordings.Add(r));
+                        readSuccessful = true;
+                    }
+                }
 
-                    // Update and report progress
+                // If read attempt of either type successful, add current id, URL pair to 
+                // list of successful reads
+                if (readSuccessful)
+                {
+                    lock (readPairs)
+                    {
+                        readPairs.Add(urlPair);
+                    }
+                }
+
+                // Update and report progress
+                lock (lockObj)
+                {
                     reads++;
                     if (callback != null)
                     {
-                        callback.Report((double)reads / TimedOutIDs.Count() * 100);
+                        callback.Report((double)reads / FailedReads.Count() * 100);
                     }
                 }
             });
 
             // Remove successfully read IDs from list of timed out IDs
-            readIDs.ForEach(id => TimedOutIDs.Remove(id));
+            readPairs.ForEach(r => FailedReads.Remove(r));
             return courses;
         }
 
@@ -107,7 +149,7 @@ namespace RMITLectopiaReader
         /// in a form of a course instance object.
         /// </summary>
         /// <param name="id"></param>
-        public CourseInstance ReadRecordingPage(int id)
+        public CourseInstance ReadCourseRecordings(int id)
         {
             String URL = RECORDINGS_URL + id;
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
@@ -125,9 +167,9 @@ namespace RMITLectopiaReader
             catch (WebException)
             {
                 // TODO: Log error
-                lock (TimedOutIDs)
+                lock (FailedReads)
                 {
-                    TimedOutIDs.Add(id);
+                    FailedReads.Add(new Tuple<int, String>(id, null));
                 }
             }
 
@@ -152,18 +194,25 @@ namespace RMITLectopiaReader
                 if (pageNodes != null)
                 {
                     var pageLinks = from a in pageNodes
-                                select a.GetAttributeValue("href", "");
+                                    select a.GetAttributeValue("href", "");
 
                     // Extract recordings for each page
                     for (var i = 0; i < pageLinks.Count(); i++)
                     {
+                        String currentURL = BASE_URL + pageLinks.ElementAt(i);
                         document = LoadDocument(BASE_URL + pageLinks.ElementAt(i));
+
+                        // If document loaded successfully, retrieve recordings
                         if (document != null)
                         {
                             recordings = GetRecordings(document);
                             recordings.ForEach(r => course.Recordings.Add(r));
                         }
-                        // TODO: If document load fails, retain link for later
+                        // Else, retain URL for later re-attempt
+                        else
+                        {
+                            FailedReads.Add(new Tuple<int, String>(id, currentURL));
+                        }
                     }
                 }
 
