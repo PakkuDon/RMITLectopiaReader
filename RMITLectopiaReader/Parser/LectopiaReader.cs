@@ -164,53 +164,62 @@ namespace RMITLectopiaReader
         }
 
         /// <summary>
-        /// Returns a list of recordings scraped from the page stored in document.
-        /// </summary>
+        /// Returns a list of recordings scraped from the URLS provided
+        /// by the course instance object.</summary>
         /// <param name="document"></param>
         /// <returns></returns>
-        private List<Recording> GetRecordings(HtmlDocument document)
+        public List<Recording> GetRecordings(CourseInstance course)
         {
             var recordingList = new List<Recording>();
 
-            // Retrieve nodes containing recording data
-            var recordingNodes = document.DocumentNode.SelectNodes(
-                "//table[@class='mainindex']");
-
-            if (recordingNodes != null)
+            foreach (var link in course.PageURLs)
             {
-                // Retrieve information from each node
-                foreach (var node in recordingNodes)
+                HtmlDocument document = LoadDocument(link);
+
+                // TODO: Figure out what to do on document load failure
+                if (document != null)
                 {
-                    var headingNode = node.SelectSingleNode(
-                        ".//tr[@class='sectionHeading']//h3");
+                    // Retrieve nodes containing recording data
+                    var recordingNodes = document.DocumentNode.SelectNodes(
+                        "//table[@class='mainindex']");
 
-                    // Retrieve timestamp
-                    var timestamp = headingNode.InnerText;
-                    timestamp = Regex.Replace(timestamp, "&nbsp;", "");
-                    timestamp = Regex.Replace(timestamp, @"\s+", " ").Trim();
-                    var recordingDate = DateTime.ParseExact(
-                        timestamp, "dd MMM yyyy - HH:mm",
-                        CultureInfo.CurrentCulture);
+                    if (recordingNodes != null)
+                    {
+                        // Retrieve information from each node
+                        foreach (var node in recordingNodes)
+                        {
+                            var headingNode = node.SelectSingleNode(
+                                ".//tr[@class='sectionHeading']//h3");
 
-                    // Retrieve recording ID
-                    var recordingID = Convert.ToInt32(
-                        headingNode.SelectSingleNode(".//a")
-                        .GetAttributeValue("id", 0));
+                            // Retrieve timestamp
+                            var timestamp = headingNode.InnerText;
+                            timestamp = Regex.Replace(timestamp, "&nbsp;", "");
+                            timestamp = Regex.Replace(timestamp, @"\s+", " ").Trim();
+                            var recordingDate = DateTime.ParseExact(
+                                timestamp, "dd MMM yyyy - HH:mm",
+                                CultureInfo.CurrentCulture);
 
-                    // Retrieve recording duration
-                    var duration = node.SelectSingleNode(
-                        ".//tr[@class='sectionHeading']/td[2]").InnerText.Trim();
+                            // Retrieve recording ID
+                            var recordingID = Convert.ToInt32(
+                                headingNode.SelectSingleNode(".//a")
+                                .GetAttributeValue("id", 0));
 
-                    // Construct recording instance
-                    var recording = new Recording(recordingID,
-                        recordingDate, duration);
+                            // Retrieve recording duration
+                            var duration = node.SelectSingleNode(
+                                ".//tr[@class='sectionHeading']/td[2]").InnerText.Trim();
 
-                    // Retrieve list of file formats
-                    var formatList = GetRecordingFormats(node);
-                    formatList.ForEach(f => recording.Formats.Add(f));
+                            // Construct recording instance
+                            var recording = new Recording(recordingID,
+                                recordingDate, duration);
 
-                    // Add recording to course instance
-                    recordingList.Add(recording);
+                            // Retrieve list of file formats
+                            var formatList = GetRecordingFormats(node);
+                            formatList.ForEach(f => recording.Formats.Add(f));
+
+                            // Add recording to course instance
+                            recordingList.Add(recording);
+                        }
+                    }
                 }
             }
             return recordingList;

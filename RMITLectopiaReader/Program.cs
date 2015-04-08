@@ -191,11 +191,12 @@ namespace RMITLectopiaReader
                 return;
             }
 
-            // If reader has a course with the matching ID, display recordings
+            // If reader has a course with the matching ID, 
+            // retrieve and display recordings
             if (model.CourseInstances.ContainsKey(id))
             {
                 var course = model.CourseInstances[id];
-                var recordings = from r in course.Recordings
+                var recordings = from r in reader.GetRecordings(course)
                                  orderby r.DateRecorded
                                  select r;
                 Console.WriteLine("Displaying recordings for {0}", course.Name);
@@ -225,14 +226,10 @@ namespace RMITLectopiaReader
             Console.WriteLine("Writing to data.json...");
 
             // Prepare output data
-            // Sort courses by name, sort recordings by date
+            // Sort courses by name
             var courses = from c in model.CourseInstances.Values
                           orderby c.Name
                           select c;
-            foreach (var course in courses)
-            {
-                course.Recordings = course.Recordings.OrderByDescending(r => r.DateRecorded).ToList();
-            }
 
             var outputData = new { Courses = courses, DateGenerated = DateTime.Now };
 
@@ -271,18 +268,7 @@ namespace RMITLectopiaReader
                 // Store read data in model
                 foreach (var course in courses)
                 {
-                    // If dummy course object, add retrieved recordings to 
-                    // corresponding course in memory
-                    if (course.Name == null)
-                    {
-                        var courseToUpdate = model.CourseInstances[course.ID];
-                        course.Recordings.ForEach(r => courseToUpdate.Recordings.Add(r));
-                    }
-                    // Else, add new course to model
-                    else
-                    {
-                        model.CourseInstances[course.ID] = course;
-                    }
+                    model.CourseInstances[course.ID] = course;
                 }
             }
         }
