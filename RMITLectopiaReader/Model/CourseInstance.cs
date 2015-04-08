@@ -11,6 +11,7 @@ namespace RMITLectopiaReader
         // Properties
         public int ID { get; set; }
         public String Name { get; set; }
+        public List<String> PageURLs { get; set; }
         public List<Recording> Recordings { get; set; }
 
         // Constructor
@@ -18,6 +19,7 @@ namespace RMITLectopiaReader
         {
             this.ID = ID;
             this.Name = Name;
+            this.PageURLs = new List<String>();
             this.Recordings = new List<Recording>();
         }
     }
