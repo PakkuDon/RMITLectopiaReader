@@ -155,16 +155,21 @@ namespace RMITLectopiaReader
                                   orderby c.Name
                                   select c;
 
-            // Display search results
-            Console.WriteLine("{0} results found.", matchingCourses.Count());
+            // Convert results to formatted strings for paging
+            String headerText = String.Format("{0} results found.", matchingCourses.Count());
+            List<String> courseResultsText = new List<String>();
+            
             if (matchingCourses.Count() > 0)
             {
-                Console.WriteLine("{0, -10} | {1, -20}", "ID", "Name");
+                headerText += String.Format("\n{0, -10} | {1, -20}", "ID", "Name");
                 foreach (var course in matchingCourses)
                 {
-                    Console.WriteLine("{0, -10} | {1, -20}", course.ID, course.Name);
+                    courseResultsText.Add(String.Format("{0, -10} | {1, -20}", course.ID, course.Name));
                 }
             }
+
+            // Display search results
+            PageOutput(headerText, courseResultsText);
         }
 
         /// <summary>
@@ -199,16 +204,18 @@ namespace RMITLectopiaReader
                 var recordings = from r in reader.GetRecordings(course)
                                  orderby r.DateRecorded
                                  select r;
-                Console.WriteLine("Displaying recordings for {0}", course.Name);
-                Console.WriteLine("{0, -10} | {1, -8} | {2, -10}", "Date", "Time", "Duration");
-
+                String headerText = "Displaying recordings for " + course.Name + "\n" 
+                    + String.Format("{0, -10} | {1, -8} | {2, -10}", "Date", "Time", "Duration");
+                List<String> recordingsText = new List<String>();
                 foreach (var recording in recordings)
                 {
-                    Console.WriteLine("{0, -10} | {1, -8} | {2, -10}",
+                    recordingsText.Add(String.Format("{0, -10} | {1, -8} | {2, -10}",
                         recording.DateRecorded.ToShortDateString(),
                         recording.DateRecorded.ToShortTimeString(),
-                        recording.Duration);
+                        recording.Duration));
                 }
+
+                PageOutput(headerText, recordingsText);
             }
             // Else, print error message
             else
@@ -271,6 +278,57 @@ namespace RMITLectopiaReader
                     model.CourseInstances[course.ID] = course;
                 }
             }
+        }
+
+        /// <summary>
+        /// Display output over a series of 'pages' which the user can browse.
+        /// </summary>
+        /// <param name="header"></param>
+        /// <param name="rows"></param>
+        private void PageOutput(String header, List<String> rows)
+        {
+            var pageSize = 15;
+            var pageCount = (int)(Math.Ceiling((decimal)rows.Count() / pageSize));
+            var pageNum = 1;
+            ConsoleKey key;
+
+            // Pad out row list with empty strings
+            while (rows.Count() % pageSize != 0)
+            {
+                rows.Add(String.Empty);
+            }
+
+            // Print pages from rows until end of row list reached
+            do
+            {
+                // Display current page content
+                Console.Clear();
+                Console.WriteLine(header);
+                var currentPage = rows.GetRange((pageNum - 1) * pageSize, pageSize);
+                for (var i = 0; i < currentPage.Count(); i++)
+                {
+                    Console.WriteLine(currentPage[i]);
+                }
+
+                // Print page number and navigation instructions
+                Console.WriteLine("{0} / {1} Up/Down keys to switch pages", pageNum, pageCount);
+
+                // Get next page to switch to
+                do
+                {
+                    key = Console.ReadKey().Key;
+                    if (key == ConsoleKey.UpArrow && pageNum != 1)
+                    {
+                        pageNum--;
+                    }
+                    else if (key == ConsoleKey.DownArrow)
+                    {
+                        pageNum++;
+                    }
+                } while (key != ConsoleKey.UpArrow && key != ConsoleKey.DownArrow);
+            } while (pageNum <= pageCount);
+
+            Console.Clear();
         }
 
         static void Main(string[] args)
