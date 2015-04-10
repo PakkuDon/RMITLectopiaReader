@@ -201,7 +201,7 @@ namespace RMITLectopiaReader
             if (model.CourseInstances.ContainsKey(id))
             {
                 var course = model.CourseInstances[id];
-                var recordings = from r in reader.GetRecordings(course)
+                var recordings = from r in reader.GetRecordings(course, progressCallback)
                                  orderby r.DateRecorded
                                  select r;
                 String headerText = "Displaying recordings for " + course.Name + "\n" 

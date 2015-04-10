@@ -168,12 +168,13 @@ namespace RMITLectopiaReader
         /// by the course instance object.</summary>
         /// <param name="document"></param>
         /// <returns></returns>
-        public List<Recording> GetRecordings(CourseInstance course)
+        public List<Recording> GetRecordings(CourseInstance course, IProgress<Double> callback = null)
         {
             var recordingList = new List<Recording>();
 
-            foreach (var link in course.PageURLs)
+            for (var i = 0; i < course.PageURLs.Count(); i++)
             {
+                var link = course.PageURLs[i];
                 HtmlDocument document = LoadDocument(link);
 
                 // TODO: Figure out what to do on document load failure
@@ -218,6 +219,15 @@ namespace RMITLectopiaReader
 
                             // Add recording to course instance
                             recordingList.Add(recording);
+                        }
+                    }
+
+                    // Report progress
+                    if (callback != null)
+                    {
+                        lock (callback)
+                        {
+                            callback.Report((double)i / course.PageURLs.Count() * 100);
                         }
                     }
                 }
