@@ -76,30 +76,39 @@ namespace RMITLectopiaReader
             var lockObj = new object();
             var reads = 0;
 
-            Parallel.ForEach(FailedReads, id =>
-            {
-                // Attempt to read course information with matching ID
-                // If found, update course list and record read ID
-                var course = ReadCourseInformation(id);
-                if (course != null)
+            Parallel.ForEach(FailedReads,
+                new ParallelOptions { MaxDegreeOfParallelism = MAX_CONNECTIONS },
+                id =>
                 {
-                    lock (readIds)
+                    // Attempt to read course information with matching ID
+                    // If found, update course list and record read ID
+                    try
                     {
+                        var course = ReadCourseInformation(id);
+                        if (course != null)
+                        {
+                            lock (courses)
+                            {
+                                courses.Add(course);
+                            }
+                        }
                         readIds.Add(id);
-                        courses.Add(course);
                     }
-                }
-
-                // Update and report progress
-                lock (lockObj)
-                {
-                    reads++;
-                    if (callback != null)
+                    catch (WebException)
                     {
-                        callback.Report((double)reads / FailedReads.Count() * 100);
+                        // Do nothing - attempted ID remains in FailedReads for later reattempt
                     }
-                }
-            });
+
+                    // Update and report progress
+                    lock (lockObj)
+                    {
+                        reads++;
+                        if (callback != null)
+                        {
+                            callback.Report((double)reads / FailedReads.Count() * 100);
+                        }
+                    }
+                });
 
             // Remove successfully read IDs from list of timed out IDs
             readIds.ForEach(r => FailedReads.Remove(r));

@@ -265,10 +265,6 @@ namespace RMITLectopiaReader
             }
             else
             {
-                // Print heading
-                Console.WriteLine("Retry failed reads");
-                Console.WriteLine("---------------------");
-
                 // Perform read operation
                 var courses = reader.ReadFailedURLs(progressCallback);
 
