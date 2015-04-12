@@ -92,7 +92,7 @@ namespace RMITLectopiaReader
         void ReadListings()
         {
             int startID;
-            int endID;
+            int count;
             Boolean validInput = false;
             int initialFailCount = reader.FailedReads.Count();
 
@@ -106,17 +106,21 @@ namespace RMITLectopiaReader
                     return;
                 }
 
-                endID = menu.GetIntegerInput("Enter an ending ID: ");
-                if (endID == Menu.DEFAULT_OPTION)
+                count = menu.GetIntegerInput("Enter number of pages to read: ");
+                if (count == Menu.DEFAULT_OPTION)
                 {
                     return;
                 }
 
                 // If input start and end IDs are invalid, print error
                 // Else set flag to exit loop
-                if (startID > endID)
+                if (startID < 0)
                 {
-                    Console.WriteLine("Start ID must be less than end ID. Please try again.");
+                    Console.WriteLine("Start ID must be greater than 0.");
+                }
+                else if (count < 0)
+                {
+                    Console.WriteLine("Count must be greater than 0.");
                 }
                 else
                 {
@@ -128,14 +132,14 @@ namespace RMITLectopiaReader
             DateTime startTime = DateTime.Now;
             Console.WriteLine("Fetching data...");
             progressCallback.Report(0);
-            List<CourseInstance> courses = reader.ReadListingsInRange(startID, endID, progressCallback);
+            List<CourseInstance> courses = reader.ReadListingsInRange(startID, startID + count, progressCallback);
             DateTime endTime = DateTime.Now;
 
             // Add course information to model
             courses.ForEach(c => model.CourseInstances[c.ID] = c);
 
             // Print statistics
-            Console.WriteLine("Successfully read {0} out of {1} pages.", courses.Count(), endID - startID);
+            Console.WriteLine("Successfully read {0} out of {1} pages.", courses.Count(), count);
             Console.WriteLine("{0} connections timed out.", reader.FailedReads.Count() - initialFailCount);
             Console.WriteLine("Operation took {0}", endTime - startTime);
         }
