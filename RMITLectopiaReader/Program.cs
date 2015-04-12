@@ -162,7 +162,7 @@ namespace RMITLectopiaReader
             // Convert results to formatted strings for paging
             String headerText = String.Format("{0} results found.", matchingCourses.Count());
             List<String> courseResultsText = new List<String>();
-            
+
             if (matchingCourses.Count() > 0)
             {
                 headerText += String.Format("\n{0, -10} | {1, -20}", "ID", "Name");
@@ -208,7 +208,7 @@ namespace RMITLectopiaReader
                 var recordings = from r in reader.GetRecordings(course, progressCallback)
                                  orderby r.DateRecorded
                                  select r;
-                String headerText = "Displaying recordings for " + course.Name + "\n" 
+                String headerText = "Displaying recordings for " + course.Name + "\n"
                     + String.Format("{0, -10} | {1, -8} | {2, -10}", "Date", "Time", "Duration");
                 List<String> recordingsText = new List<String>();
                 foreach (var recording in recordings)
@@ -307,7 +307,7 @@ namespace RMITLectopiaReader
                 var currentPage = rows.GetRange((pageNum - 1) * pageSize, pageSize);
                 for (var i = 0; i < currentPage.Count(); i++)
                 {
-                    Console.WriteLine(currentPage[i]);
+                    Console.WriteLine(Truncate(currentPage[i], Console.WindowWidth));
                 }
 
                 // Print page number and navigation instructions
@@ -329,6 +329,22 @@ namespace RMITLectopiaReader
             } while (pageNum <= pageCount);
 
             Console.Clear();
+        }
+
+        /// <summary>
+        /// Helper function for trimming long Strings.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="length"></param>
+        /// <param name="trail"></param>
+        /// <returns></returns>
+        public String Truncate(String value, int length, String trail = "...")
+        {
+            if (value.Length >= length)
+            {
+                value = value.Substring(0, length - trail.Length - 1) + trail;
+            }
+            return value;
         }
 
         static void Main(string[] args)
