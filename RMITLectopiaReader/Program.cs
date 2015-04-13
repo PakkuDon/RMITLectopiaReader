@@ -298,7 +298,8 @@ namespace RMITLectopiaReader
                 rows.Add(String.Empty);
             }
 
-            // Print pages from rows until end of row list reached
+            // Print rows a page at a time
+            // Keep displaying pages until user enters 'Q'
             do
             {
                 // Display current page content
@@ -311,22 +312,20 @@ namespace RMITLectopiaReader
                 }
 
                 // Print page number and navigation instructions
-                Console.WriteLine("{0} / {1} Up/Down keys to switch pages", pageNum, pageCount);
+                Console.WriteLine("{0} / {1} Up/Down keys to switch pages. Q to exit", pageNum, pageCount);
 
                 // Get next page to switch to
-                do
+                // Set page number if next number is within bounds
+                key = Console.ReadKey().Key;
+                if (key == ConsoleKey.UpArrow && pageNum != 1)
                 {
-                    key = Console.ReadKey().Key;
-                    if (key == ConsoleKey.UpArrow && pageNum != 1)
-                    {
-                        pageNum--;
-                    }
-                    else if (key == ConsoleKey.DownArrow)
-                    {
-                        pageNum++;
-                    }
-                } while (key != ConsoleKey.UpArrow && key != ConsoleKey.DownArrow);
-            } while (pageNum <= pageCount);
+                    pageNum--;
+                }
+                else if (key == ConsoleKey.DownArrow && pageNum < pageCount)
+                {
+                    pageNum++;
+                }
+            } while (key != ConsoleKey.Q);
 
             Console.Clear();
         }
