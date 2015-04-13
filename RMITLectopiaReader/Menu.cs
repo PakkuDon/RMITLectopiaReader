@@ -53,12 +53,18 @@ namespace RMITLectopiaReader
             Options = new Dictionary<int, MenuOption>();
         }
 
+        /// <summary>
+        /// Prints program heading
+        /// </summary>
         public void DisplayHeader()
         {
             Console.WriteLine("RMIT Lectopia Reader");
             Console.WriteLine("------------------------");
         }
 
+        /// <summary>
+        /// Prints list of available program options.
+        /// </summary>
         public void DisplayOptions()
         {
             foreach (var key in Options.Keys)
@@ -67,11 +73,22 @@ namespace RMITLectopiaReader
             }
         }
 
+        /// <summary>
+        /// Appends the specified option to list of menu options.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="method"></param>
         public void AddOption(String text, Action method = null)
         {
             Options[Options.Count() + 1] = new MenuOption(text, method);
         }
 
+        /// <summary>
+        /// Prompts user for a numeric value. Repeats prompt until user provides
+        /// valid value or until user triggers some exit condition.
+        /// </summary>
+        /// <param name="prompt"></param>
+        /// <returns></returns>
         public int GetIntegerInput(String prompt)
         {
             int value = INVALID_INPUT;
@@ -88,6 +105,7 @@ namespace RMITLectopiaReader
                     }
                     value = Convert.ToInt32(input);
                 }
+                // If input not numeric, print error
                 catch (System.FormatException)
                 {
                     Console.WriteLine("Input must be numeric. Please try again.");

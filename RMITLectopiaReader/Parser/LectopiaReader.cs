@@ -69,6 +69,12 @@ namespace RMITLectopiaReader
             return courses;
         }
 
+        /// <summary>
+        /// Re-attempt previously timed out connections to course recordings using the IDs
+        /// listed in FailedReads. 
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <returns></returns>
         public List<CourseInstance> ReadFailedURLs(IProgress<Double> callback = null)
         {
             var courses = new List<CourseInstance>();
@@ -124,9 +130,6 @@ namespace RMITLectopiaReader
         public CourseInstance ReadCourseInformation(int id)
         {
             String URL = RECORDINGS_URL + id;
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
-            request.AllowAutoRedirect = false;
-            request.Proxy = null;
 
             // Check if given URL points to a valid listing
             // If list loaded successfully, load document
@@ -154,7 +157,7 @@ namespace RMITLectopiaReader
 
                 // Construct course instance
                 var course = new CourseInstance(id, title);
-                course.PageURLs.Add(URL);
+                course.PageLinks.Add(TruncatePageURL(URL));
 
                 // Extract page links
                 var pageNodes = document.DocumentNode.SelectNodes(
@@ -162,8 +165,9 @@ namespace RMITLectopiaReader
                 if (pageNodes != null)
                 {
                     var pageLinks = from a in pageNodes
-                                    select BASE_URL + a.GetAttributeValue("href", "");
-                    course.PageURLs.AddRange(pageLinks);
+                                    select TruncatePageURL(BASE_URL
+                                    + a.GetAttributeValue("href", ""));
+                    course.PageLinks.AddRange(pageLinks);
                 }
 
                 // Return constructed instance
@@ -181,9 +185,10 @@ namespace RMITLectopiaReader
         {
             var recordingList = new List<Recording>();
 
-            for (var i = 0; i < course.PageURLs.Count(); i++)
+            // Retrieve recordings from each page associated with the given course instance
+            for (var i = 0; i < course.PageLinks.Count(); i++)
             {
-                var link = course.PageURLs[i];
+                var link = BASE_URL + course.PageLinks[i];
                 HtmlDocument document = LoadDocument(link);
 
                 // TODO: Figure out what to do on document load failure
@@ -236,7 +241,7 @@ namespace RMITLectopiaReader
                     {
                         lock (callback)
                         {
-                            callback.Report((double)i / course.PageURLs.Count() * 100);
+                            callback.Report((double)i / course.PageLinks.Count() * 100);
                         }
                     }
                 }
@@ -272,6 +277,11 @@ namespace RMITLectopiaReader
             return formatList;
         }
 
+        /// <summary>
+        /// Constructs a HtmlDocument instance representing the page at the given URL. 
+        /// </summary>
+        /// <param name="URL"></param>
+        /// <returns></returns>
         private HtmlDocument LoadDocument(String URL)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(URL);
@@ -299,6 +309,16 @@ namespace RMITLectopiaReader
                 }
             }
             return document;
+        }
+
+        /// <summary>
+        /// Removes base URL from given URL.
+        /// </summary>
+        /// <param name="pageURL"></param>
+        /// <returns></returns>
+        public String TruncatePageURL(String pageURL)
+        {
+            return pageURL.Replace(BASE_URL, "");
         }
     }
 }

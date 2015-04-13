@@ -11,14 +11,14 @@ namespace RMITLectopiaReader
         // Properties
         public int ID { get; set; }
         public String Name { get; set; }
-        public List<String> PageURLs { get; set; }
+        public List<String> PageLinks { get; set; }
 
         // Constructor
         public CourseInstance(int ID, String Name)
         {
             this.ID = ID;
             this.Name = Name;
-            this.PageURLs = new List<String>();
+            this.PageLinks = new List<String>();
         }
     }
 }

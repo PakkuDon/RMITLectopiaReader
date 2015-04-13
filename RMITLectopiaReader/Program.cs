@@ -236,13 +236,16 @@ namespace RMITLectopiaReader
         {
             Console.WriteLine("Writing to data.json...");
 
-            // Prepare output data
             // Sort courses by name
-            var courses = from c in model.CourseInstances.Values
-                          orderby c.Name
+            var courses = from c in model.CourseInstances
+                          orderby c.Value.Name
                           select c;
 
-            var outputData = new { Courses = courses, DateGenerated = DateTime.Now };
+            // Prepare output data
+            var outputData = new { 
+                Courses = courses.ToDictionary(c => c.Key, c => c.Value), 
+                DateGenerated = DateTime.Now 
+            };
 
             // Write data out to file
             // TODO: Prompt user for filepath to save at
