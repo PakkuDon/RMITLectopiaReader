@@ -209,14 +209,16 @@ namespace RMITLectopiaReader
                                  orderby r.DateRecorded
                                  select r;
                 String headerText = "Displaying recordings for " + course.Name + "\n"
-                    + String.Format("{0, -10} | {1, -8} | {2, -10}", "Date", "Time", "Duration");
+                    + String.Format("{0, -10} | {1, -8} | {2, -10} | {3, -10}", 
+                    "Date", "Time", "Duration", "Formats available");
                 List<String> recordingsText = new List<String>();
                 foreach (var recording in recordings)
                 {
-                    recordingsText.Add(String.Format("{0, -10} | {1, -8} | {2, -10}",
+                    recordingsText.Add(String.Format("{0, -10} | {1, -8} | {2, -10} | {3, -10}",
                         recording.DateRecorded.ToShortDateString(),
                         recording.DateRecorded.ToShortTimeString(),
-                        recording.Duration));
+                        recording.Duration,
+                        recording.Formats.Count()));
                 }
 
                 PageOutput(headerText, recordingsText);
@@ -236,14 +238,9 @@ namespace RMITLectopiaReader
         {
             Console.WriteLine("Writing to data.json...");
 
-            // Sort courses by name
-            var courses = from c in model.CourseInstances
-                          orderby c.Value.Name
-                          select c;
-
             // Prepare output data
             var outputData = new { 
-                Courses = courses.ToDictionary(c => c.Key, c => c.Value), 
+                Courses = model.CourseInstances,
                 DateGenerated = DateTime.Now 
             };
 

@@ -153,7 +153,7 @@ namespace RMITLectopiaReader
             {
                 // Retrieve subject title
                 var title = document.DocumentNode.SelectSingleNode(
-                    "//table[@id='header']//h2").InnerText;
+                    "//table[@id='header']//h2").InnerText.Trim();
 
                 // Construct course instance
                 var course = new CourseInstance(id, title);
