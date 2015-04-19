@@ -155,8 +155,22 @@ namespace RMITLectopiaReader
                 var title = document.DocumentNode.SelectSingleNode(
                     "//table[@id='header']//h2").InnerText.Trim();
 
+                // Retrieve date of last recording
+                DateTime? lastUpdated = null;
+                var lastRecorded = document.DocumentNode.SelectSingleNode(
+                        "//table[@class='mainindex'][1]//tr[@class='sectionHeading']//h3");
+                if (lastRecorded != null)
+                {
+                    var timestamp = lastRecorded.InnerText;
+                    timestamp = Regex.Replace(timestamp, "&nbsp;", "");
+                    timestamp = Regex.Replace(timestamp, @"\s+", " ").Trim();
+                    lastUpdated = DateTime.ParseExact(
+                        timestamp, "dd MMM yyyy - HH:mm",
+                        CultureInfo.CurrentCulture);
+                }
+
                 // Construct course instance
-                var course = new CourseInstance(id, title);
+                var course = new CourseInstance(id, title, lastUpdated);
                 course.PageLinks.Add(TruncatePageURL(URL));
 
                 // Extract page links

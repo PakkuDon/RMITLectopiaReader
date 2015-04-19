@@ -208,9 +208,12 @@ namespace RMITLectopiaReader
                 var recordings = from r in reader.GetRecordings(course, progressCallback)
                                  orderby r.DateRecorded
                                  select r;
-                String headerText = "Displaying recordings for " + course.Name + "\n"
-                    + String.Format("{0, -10} | {1, -8} | {2, -10} | {3, -10}", 
-                    "Date", "Time", "Duration", "Formats available");
+                String headerText = "Displaying recordings for " + course.Name + "\n";
+                headerText += "Last updated:" + course.LastUpdated
+                    .GetValueOrDefault().ToShortDateString() + "\n";
+                headerText += String.Format("{0, -10} | {1, -8} | {2, -10} | {3, -10}",
+                "Date", "Time", "Duration", "Formats available");
+
                 List<String> recordingsText = new List<String>();
                 foreach (var recording in recordings)
                 {
@@ -239,9 +242,10 @@ namespace RMITLectopiaReader
             Console.WriteLine("Writing to data.json...");
 
             // Prepare output data
-            var outputData = new { 
+            var outputData = new
+            {
                 Courses = model.CourseInstances,
-                DateGenerated = DateTime.Now 
+                DateGenerated = DateTime.Now
             };
 
             // Write data out to file
