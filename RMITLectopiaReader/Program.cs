@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using RMITLectopiaReader.Model;
 using Newtonsoft.Json;
 using System.IO;
+using Newtonsoft.Json.Serialization;
 
 namespace RMITLectopiaReader
 {
@@ -252,7 +253,12 @@ namespace RMITLectopiaReader
             // TODO: Prompt user for filepath to save at
             using (StreamWriter sw = new StreamWriter("data.json"))
             {
-                var jsonString = JsonConvert.SerializeObject(outputData);
+                var jsonString = JsonConvert.SerializeObject(outputData,
+                    Formatting.None,
+                    new JsonSerializerSettings
+                    {
+                        ContractResolver = new CamelCasePropertyNamesContractResolver()
+                    });
                 sw.Write(jsonString);
             }
 
